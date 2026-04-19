@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wallace Line Interactive Map</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0b1d2a;
+    color: white;
+    text-align: center;
+  }
+
+  h2 {
+    margin: 10px;
+  }
+
+  .container {
+    position: relative;
+    display: inline-block;
+    max-width: 900px;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+  }
+
+  .dot {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+  }
+
+.dot {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid white;
+  cursor: pointer;
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform 0.2s ease;
+}
+
+.dot.active {
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+  .yellow { background: yellow; }
+  .orange { background: orange; }
+  .red { background: red; }
+  .green { background: limegreen; }
+  .blue { background: blue; }
+  .white { background: white; }
+  .purple { background: purple; }
+
+  .info-box {
+    margin-top: 10px;
+    padding: 10px;
+    background: #122b3a;
+    border-radius: 10px;
+    display: inline-block;
+    min-width: 250px;
+  }
+
+</style>
+</head>
+
+<body>
+
+<h2>🌏 Wallace Line Animal Explorer</h2>
+<p>Tap a dot to hear the animal and learn about it!</p>
+
+<div class="container">
+  <img src="images/map.jpg" alt="Map">
+
+  <!-- UPDATED DOT POSITIONS -->
+  <div class="dot yellow" style="top:52%; left:9%;" onclick="trigger('elephant', this)"></div>
+  <div class="dot orange" style="top:58%; left:8.5%;" onclick="trigger('tiger', this)"></div>
+  <div class="dot red" style="top:26%; left:31%;" onclick="trigger('orangutan', this)"></div>
+  <div class="dot green" style="top:38%; left:47.5%;" onclick="trigger('crocodile', this)"></div>
+  <div class="dot blue" style="top:48%; left:60%;" onclick="trigger('kakatua', this)"></div>
+  <div class="dot white" style="top:87.5%; left:72%;" onclick="trigger('komodo', this)"></div>
+  <div class="dot purple" style="top:54.5%; left:96%;" onclick="trigger('kangaroo', this)"></div>
+</div>
+
+<div class="info-box" id="info">
+  Tap a dot to learn about animals!
+</div>
+
+<script>
+const data = {
+  elephant: {
+    sound: "elephant.mp3",
+    text: "Elephants live in Sumatra. They are large, intelligent animals with strong trunks."
+  },
+  tiger: {
+    sound: "tiger.mp3",
+    text: "Tigers in Sumatra are powerful predators with orange fur and black stripes."
+  },
+  orangutan: {
+    sound: "orangutan.mp3",
+    text: "Orangutans live in Borneo. They are smart apes that live in trees."
+  },
+  crocodile: {
+    sound: "crocodile.mp3",
+    text: "Crocodiles are strong reptiles that live in rivers and swamps."
+  },
+  kakatua: {
+    sound: "kakatua.mp3",
+    text: "Kakatua, or cockatoos, are noisy birds found in eastern Indonesia."
+  },
+  komodo: {
+    sound: "komodo.mp3",
+    text: "Komodo dragons are the largest lizards in the world and live in Indonesia."
+  },
+  kangaroo: {
+    sound: "kangaroo.mp3",
+    text: "Kangaroos live in Papua and move by jumping over the trees."
+  }
+};
+
+let currentAudio = null;
+let currentUtterance = null;
+let activeDot = null;
+
+function trigger(animal, element) {
+  // 🔴 STOP previous audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+
+  // 🔴 STOP narration
+  window.speechSynthesis.cancel();
+
+  // 🔴 Remove previous active dot
+  if (activeDot) {
+    activeDot.classList.remove("active");
+  }
+
+  // 🟢 Set new active dot
+  element.classList.add("active");
+  activeDot = element;
+
+  // 🟢 Update text
+  document.getElementById("info").innerText = data[animal].text;
+
+  // 🟢 Play animal sound FIRST
+  currentAudio = new Audio(data[animal].sound);
+  currentAudio.play();
+
+  // 🟢 After sound ends → play narration
+  currentAudio.onended = () => {
+    currentUtterance = new SpeechSynthesisUtterance(data[animal].text);
+    currentUtterance.lang = "en-US";
+    currentUtterance.rate = 0.9;
+    window.speechSynthesis.speak(currentUtterance);
+  };
+}
+</script>
+
+</body>
+</html>
