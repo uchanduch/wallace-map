@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wallace Line Interactive Map</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0b1d2a;
+    color: white;
+    text-align: center;
+  }
+
+  h2 {
+    margin: 10px;
+  }
+
+  .container {
+    position: relative;
+    display: inline-block;
+    max-width: 900px;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+  }
+
+  .dot {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+  }
+
+.dot {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid white;
+  cursor: pointer;
+  transform: translate(-50%, -50%) scale(1);
+  transition: transform 0.2s ease;
+}
+
+.dot.active {
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+  .yellow { background: yellow; }
+  .orange { background: orange; }
+  .red { background: red; }
+  .green { background: limegreen; }
+  .blue { background: blue; }
+  .white { background: white; }
+  .purple { background: purple; }
+  .black { background: black;}
+
+  .info-box {
+    margin-top: 10px;
+    padding: 10px;
+    background: #122b3a;
+    border-radius: 10px;
+    display: inline-block;
+    min-width: 250px;
+  }
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  z-index: 998;
+}
+
+.balloon {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 40vw;
+  max-width: 400px;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  z-index: 999;
+  filter: drop-shadow(0 0 5px white)
+          drop-shadow(0 0 10px white);
+}
+
+.balloon.show {
+  animation: popBounceCenter 0.6s ease forwards;
+}
+
+.balloon.fadeout {
+  animation: fadeOutCenter 0.5s ease forwards;
+}
+
+/* CENTER POP + BOUNCE */
+@keyframes popBounceCenter {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -60%) scale(1.3);
+    opacity: 1;
+  }
+  70% {
+    transform: translate(-50%, -48%) scale(0.95);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+/* FADE OUT */
+@keyframes fadeOutCenter {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -70%) scale(0.8);
+  }
+}
+
+
+</style>
+</head>
+
+<body>
+
+<h2>🌏 Wallace Line Animal Explorer</h2>
+<p>Click a dot to hear the animal and learn about it!</p>
+
+<div class="container">
+  <img src="images/map.jpg" alt="Map">
+
+  <!-- UPDATED DOT POSITIONS -->
+  <div class="dot yellow" style="top:52%; left:9%;" onclick="trigger('elephant', this)"></div>
+  <div class="dot orange" style="top:58%; left:8.5%;" onclick="trigger('tiger', this)"></div>
+  <div class="dot red" style="top:26%; left:31%;" onclick="trigger('orangutan', this)"></div>
+  <div class="dot green" style="top:38%; left:47.5%;" onclick="trigger('crocodile', this)"></div>
+  <div class="dot blue" style="top:48%; left:60%;" onclick="trigger('kakatua', this)"></div>
+  <div class="dot white" style="top:87.5%; left:72%;" onclick="trigger('komodo', this)"></div>
+  <div class="dot purple" style="top:54.5%; left:96%;" onclick="trigger('kangaroo', this)"></div>
+  <div class="dot black" style="top:14.5%; left:66.5%;" onclick="trigger('wallace', this)"></div>
+
+</div>
+
+<div class="info-box" id="info">
+  ------------------------------------------------ This project is belong to Tectonic Menagerie Team! ----------------------------------------------------
+</div>
+
+<script>
+const data = {
+  elephant: { sound: "sound/elephant.mp3", text: "Elephants live in Sumatra. They are large, intelligent animals with strong trunks.", img: "images/elephant.png" },
+  tiger: { sound: "sound/tiger.mp3", text: "Tigers in Sumatra are powerful predators with orange fur and black stripes.", img: "images/tiger.png" },
+  orangutan: { sound: "sound/orangutan.mp3", text: "Orangutans live in Borneo. They are smart apes that live in trees.", img: "images/orangutan.png" },
+  crocodile: { sound: "sound/crocodile.mp3", text: "Crocodiles are strong reptiles that live in rivers and swamps.", img: "images/crocodile.png" },
+  kakatua: { sound: "sound/kakatua.mp3", text: "Kakatua, or cockatoos, are noisy birds found in eastern Indonesia.", img: "images/kakatua.png" },
+  komodo: { sound: "sound/komodo.mp3", text: "Komodo dragons are the largest lizards in the world and live in Indonesia.", img: "images/komodo.png" },
+  kangaroo: { sound: "sound/kangaroo.mp3", text: "Kangaroos live in Papua and move by jumping over the trees.", img: "images/kangaroo.png" },
+  wallace: { sound: "sound/wind.mp3", text: "The Wallace Line is a bio-geographical boundary identified by Alfred Russel Wallace in 1863, separating Asian and Australian fauna. It runs through the Lombok Strait (between Bali and Lombok) and the Makassar Strait (between Borneo and Sulawesi), as the west and east side have different biomes.", img: "images/wallace.png" },
+};
+
+let currentAudio = null;
+let activeDot = null;
+let currentBalloon = null;
+
+function trigger(animal, element) {
+
+  // STOP previous audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+
+  speechSynthesis.cancel();
+
+  // REMOVE previous active dot
+  if (activeDot) activeDot.classList.remove("active");
+
+  // REMOVE previous balloon immediately
+  if (currentBalloon) currentBalloon.remove();
+
+  // SET active dot
+  element.classList.add("active");
+  activeDot = element;
+
+  // UPDATE text
+  document.getElementById("info").innerText = data[animal].text;
+
+  // CREATE balloon
+  const balloon = document.createElement("img");
+  balloon.src = data[animal].img;
+  balloon.className = "balloon";
+
+
+  element.parentElement.appendChild(balloon);
+
+  // START bounce animation
+  setTimeout(() => {
+    balloon.classList.add("show");
+  }, 10);
+
+  currentBalloon = balloon;
+
+  // PLAY SOUND
+  currentAudio = new Audio(data[animal].sound);
+  currentAudio.play();
+
+  // AFTER SOUND → narration
+  currentAudio.onended = () => {
+    let speech = new SpeechSynthesisUtterance(data[animal].text);
+    speech.lang = "en-US";
+
+    speech.onend = () => {
+      // 💨 FADE OUT after narration
+      if (currentBalloon) {
+        currentBalloon.classList.add("fadeout");
+
+        setTimeout(() => {
+          if (currentBalloon) {
+            currentBalloon.remove();
+            currentBalloon = null;
+          }
+        }, 500);
+      }
+    };
+
+    speechSynthesis.speak(speech);
+  };
+}
+</script>
+
+</body>
+</html>
